@@ -256,7 +256,7 @@ def print_statistics(json_data):
 
 #----------------------------------------------------------------------------
 
-def recreate_aligned_images(json_data, dst_dir='realign1024x1024', output_size=1024, transform_size=4096, enable_padding=True):
+def recreate_aligned_images(json_data, dst_dir='realign1024x1024', output_size=1024, transform_size=4096, enable_padding=True, ratio=1.):
     print('Recreating aligned images...')
     if dst_dir:
         os.makedirs(dst_dir, exist_ok=True)
@@ -294,6 +294,8 @@ def recreate_aligned_images(json_data, dst_dir='realign1024x1024', output_size=1
         x *= max(np.hypot(*eye_to_eye) * 2.0, np.hypot(*eye_to_mouth) * 1.8)
         y = np.flipud(x) * [-1, 1]
         c = eye_avg + eye_to_mouth * 0.1
+        x = np.round(0.5 * x * (ratio + 1))
+        y = np.round(0.5 * y * (ratio + 1))
         quad = np.stack([c - x - y, c - x + y, c + x + y, c + x - y])
         qsize = np.hypot(*x) * 2
 
@@ -338,7 +340,7 @@ def recreate_aligned_images(json_data, dst_dir='realign1024x1024', output_size=1
         # Transform.
         img = img.transform((transform_size, transform_size), PIL.Image.QUAD, (quad + 0.5).flatten(), PIL.Image.BILINEAR)
         if output_size < transform_size:
-            img = img.resize((output_size, output_size), PIL.Image.ANTIALIAS)
+            img = img.resize((round(output_size * ratio), round(output_size * ratio)), PIL.Image.ANTIALIAS)
 
         # Save aligned image.
         dst_subdir = os.path.join(dst_dir, '%05d' % (item_idx - item_idx % 1000))
